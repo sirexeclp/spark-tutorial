@@ -31,7 +31,10 @@ object Sindy{
      import org.apache.spark.sql.functions._
      val flatten = udf((xs: Seq[Seq[String]]) => xs.flatten)
      val resDF = spark.createDataFrame(results)
-       resDF.groupBy($"_1").agg(collect_set($"_2")).groupBy($"collect_set(_2)").agg(collect_set($"_1")).filter(_.getSeq(0).length > 1).show(100)
+       resDF.groupBy($"_1").agg(collect_set($"_2")).filter(_.getSeq(1).length > 1)
+       .select(explode($"collect_set(_2)"), $"collect_set(_2)").groupBy($"col").agg(collect_set($"collect_set(_2)"))//.map(r => r.getSeq(1).filter(_!=r.getString(0)) )
+         .show(100,false)
+         //.groupBy($"collect_set(_2)").agg(collect_set($"_1")).filter(_.getSeq(0).length > 1)
 
      //val test = data.map(dataset => (dataset, dataset.columns))
 
