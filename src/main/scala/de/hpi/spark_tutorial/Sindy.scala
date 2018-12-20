@@ -1,12 +1,14 @@
 package de.hpi.spark_tutorial
 
-import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.{Row, SQLContext, SparkSession}
 
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ListBuffer
 
 object Sindy{
 
    def discoverINDs(inputs: List[String], spark: SparkSession): Unit = {
+
+    import spark.implicits._
 
      val data = inputs.map(
        spark.read
@@ -27,10 +29,12 @@ object Sindy{
         }
      }
 
-     //val test = data.map(dataset => (dataset, dataset.columns))
+     val resultsDF = results.toDF()
 
+     //val resultsRDD = resultsDF.rdd
+
+     //resultsRDD.take(10).foreach(println)
      //print(data.count())
       //data.show(100)
-
   }
 }
