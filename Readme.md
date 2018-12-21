@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/sirexeclp/spark-tutorial.svg?branch=master)](https://travis-ci.com/sirexeclp/spark-tutorial)
 This is a basic scala project that includes spark dependencies and necessary build-configuration to build a jar that can be submitted to a spark installation via spark-submit.
 Things to do after checking out and opening in intellij:
     Add scala SDK 2.11.11 (tested with this version, it has to be 2.11.x since this is the spark version)
