@@ -33,14 +33,26 @@ object Sindy {
 		import org.apache.spark.sql.functions._
 
 		val resDF = results.toDF
-		val cells = resDF.groupBy("_1")
-				.agg(collect_set("_2"))
-				//.filter(_.getSeq(1).length > 1)
+		val cells = resDF.groupBy($"_1")
+				.agg(collect_set($"_2").alias("tupels"))
+		//cells.show(100)
 		val inclList =cells
-			.select(explode($"collect_set(_2)"), $"collect_set(_2)")
-			.groupBy($"col")
-			.agg(collect_set($"collect_set(_2)"))
-			.show(100, false)
+			.select(explode($"tupels"), $"tupels")
+			//.groupBy($"col")
+			//.agg(collect_set($"tupels"))
+			.as[(String,Seq[String])]
+			.map( x => (x._1,x._2.filter(_!=x._1)))
+			.groupBy($"_1")
+			.agg(collect_set($"_2"))
+			.as[(String,Seq[Seq[String]])]
+			.map(x => (x._1,x._2.reduce(_.intersect(_))))
+			.filter(x=> x._2.length > 0)
+			.foreach(r => println(r._1+" < "+r._2.reduce(_+", "+_)) )
+			//.groupBy($"col")
+			//.agg(collect_set($"collect_set(collect_set(_2))"))
+			//.filter(_.getSeq(1).length > 1)
+
+	//	inclList.show(100, false)
 
 
 		//val flatten = udf((xs: Seq[Seq[String]]) => xs.flatten)
