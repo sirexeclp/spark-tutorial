@@ -9,17 +9,35 @@ import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorIndexer}
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 
-// A Scala case class; works out of the box as Dataset type using Spark's implicit encoders
-case class Person(name:String, surname:String, age:Int)
-
-// A non-case class; requires an encoder to work as Dataset type
-class Pet(var name:String, var age:Int) {
-  override def toString = s"Pet(name=$name, age=$age)"
-}
-
 object SimpleSpark extends App {
 
+
   override def main(args: Array[String]): Unit = {
+    val usage = """
+    Usage: java -jar GatrioGrzelka.jar --path TPCH --cores 4
+  """
+    if (args.length == 0)
+    {
+        println(usage)
+        return 1
+    }
+    val arglist = args.toList
+    type OptionMap = Map[Symbol, Any]
+
+    def nextOption(map : OptionMap, list: List[String]) : OptionMap = {
+      def isSwitch(s : String) = (s(0) == '-')
+      list match {
+        case Nil => map
+        case "--path" :: value :: tail =>
+          nextOption(map ++ Map('path -> value.toString), tail)
+        case "--cores" :: value :: tail =>
+          nextOption(map ++ Map('cores -> value.toInt), tail)
+        case option :: tail => println("Unknown option "+option)
+              sys.exit(1)
+      }
+    }
+    val options = nextOption(Map(),arglist)
+    println(options)
 
     // Turn off logging
     Logger.getLogger("org").setLevel(Level.OFF)
@@ -33,7 +51,7 @@ object SimpleSpark extends App {
     val sparkBuilder = SparkSession
       .builder()
       .appName("SparkTutorial")
-      .master("local[4]") // local, with 4 worker cores
+      .master(s"local["+options('cores)+"]") // local, with 4 worker cores
     val spark = sparkBuilder.getOrCreate()
 
     // Set the default number of shuffle partitions (default is 200, which is too high for local deployment)
@@ -56,8 +74,8 @@ object SimpleSpark extends App {
     // Inclusion Dependency Discovery (Homework)
     //------------------------------------------------------------------------------------------------------------------
 
-    val inputs = List("region", "nation")//, "supplier", "customer", "part", "lineitem", "orders")
-      .map(name => s"data/TPCH/tpch_$name.csv")
+    val inputs = List("region", "nation", "supplier", "customer", "part", "lineitem", "orders")
+      .map(name => options('path)+s"/tpch_$name.csv")
 
     time {Sindy.discoverINDs(inputs, spark)}
   }
