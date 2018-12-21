@@ -4,11 +4,13 @@ import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import org.apache.spark.sql.functions.explode
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.functions.udf
 
 object Sindy {
 
 	def discoverINDs(inputs: List[String], spark: SparkSession): Unit = {
-
+		import spark.implicits._
 		val data = inputs.map(
 			spark.read
 					.option("inferSchema", "false")
@@ -16,26 +18,46 @@ object Sindy {
 					.option("delimiter", ";")
 					.csv(_)
 		) // as data sets
-
+		println("data read")
 		val results = ListBuffer[(String, String)]()
-		import spark.implicits._
-		for (dataset <- data) {
-			val column_names = dataset.columns
-			for (row: Row <- dataset.collect()) {
-				for (j <- row.toSeq.indices) {
-					results += ((row.getString(j), column_names(j)))
-				}
-			}
-		}
+
+	//	for (dataset <- data) {
+	//		val column_names = dataset.columns
+	//		for (row: Row <- dataset.collect()) {
+	//			for (j <- row.toSeq.indices) {
+	//				results += ((row.getString(j), column_names(j)))
+	//			}
+	//		}
+		//}
+		//data(0).columns.toSeq.foreach(println)
+	//	val headers= data(0).columns.toSeq
+	//	println(headers)
+	//	val test = data(0).flatMap(r => r.toSeq.asInstanceOf[Seq[String]].zipWithIndex)
+	//		test.show(100)
+	//	test.map(x=> (x._1, headers)).show(100)
+	//	data(0).flatMap( row => row.toSeq.asInstanceOf[Seq[String]].zip(data(0).columns.toSeq)).show(100)
+	//	data(0).flatMap( (row:Row) => row.toSeq.asInstanceOf[Seq[String]].zip(data(0).columns.toSeq)).show(100)
+
+		val tupels = data.map(df => {
+			val headers = df.columns.toSeq
+			df.flatMap(row => row.toSeq.asInstanceOf[Seq[String]].zip(headers).map( x=>(x._1,x._2) ) )
+		})
+		.reduce(_.union(_))//.show(100)
+	//		frame=>frame.map(row => row. )
+		//)//
+		//.foreach(_.show(100))
 
 
-		import org.apache.spark.sql.functions.udf
-		import org.apache.spark.sql.functions._
 
-		val resDF = results.toDF
-		val cells = resDF.groupBy($"_1")
+//
+		//println("1")
+		//val resDF = results.toDF.repartition(32)
+		//println("2")
+		val cells = tupels
+				.groupBy($"_1")
 				.agg(collect_set($"_2").alias("tupels"))
 		//cells.show(100)
+		println("3")
 		val inclList =cells
 			.select(explode($"tupels"), $"tupels")
 			//.groupBy($"col")
