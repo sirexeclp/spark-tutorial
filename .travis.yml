@@ -1,3 +1,8 @@
-{
-  "language":"java"
-}
+language: java
+deploy:
+  provider: releases
+  api_key: $TOKEN
+  file: "test"
+  skip_cleanup: true
+  on:
+    tags: false
